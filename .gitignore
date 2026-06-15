@@ -65,3 +65,4 @@ $RECYCLE.BIN/
 *.orig
 *.rej
 *.tmp
+/.idea/
