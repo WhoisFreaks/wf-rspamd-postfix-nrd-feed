@@ -187,7 +187,7 @@ The job runs at 02:15 UTC every day and logs to `/var/log/wf-nrd.log`.
 Check that the symbol fires on a test message:
 
 ```bash
-echo "Test" | rspamc -F test@recently-registered.xyz
+wf-nrd-test.sh recently-registered.xyz
 ```
 
 Look for `WF_NRD_SENDER(5.00)` in the output. Then confirm Postfix is connected:
