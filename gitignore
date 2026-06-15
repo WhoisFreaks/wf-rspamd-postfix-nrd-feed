@@ -1,0 +1,67 @@
+# =============================================================================
+# Secrets — NEVER commit API keys
+# =============================================================================
+apikey
+*.apikey
+.env
+.env.*
+!.env.example
+
+# =============================================================================
+# Runtime data — generated at deploy time, not for version control
+# =============================================================================
+
+# NRD domain cache (per-day files downloaded by the fetch script)
+/var/cache/wf-nrd/
+
+# Rspamd map file (rebuilt daily by the fetch script)
+nrd_domains.map
+*.map
+
+# Fetch logs
+*.log
+
+# =============================================================================
+# Editor / IDE
+# =============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+.vs/
+
+# =============================================================================
+# OS junk
+# =============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# =============================================================================
+# Backup / temporary
+# =============================================================================
+*.bak
+*.backup
+*.orig
+*.rej
+*.tmp

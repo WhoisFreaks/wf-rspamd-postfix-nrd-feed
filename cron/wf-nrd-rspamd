@@ -1,0 +1,18 @@
+# /etc/cron.d/wf-nrd-rspamd
+#
+# Daily refresh of the WhoisFreaks NRD feed for Rspamd.
+#
+# Runs as root at 02:15 UTC every day. Output is appended to
+# /var/log/wf-nrd.log for easy monitoring.
+#
+# To change the rolling-window size, edit WINDOW_DAYS below:
+#   5  → fewer false positives, less coverage
+#   10 → balanced default
+#   30 → broadest coverage, more false positives possible
+#
+# No Rspamd reload is needed after each run — Rspamd detects the
+# atomic file replacement via inotify and hot-reloads the map.
+
+WINDOW_DAYS=10
+
+15 2 * * * root /usr/local/bin/wf-nrd-fetch.sh >> /var/log/wf-nrd.log 2>&1

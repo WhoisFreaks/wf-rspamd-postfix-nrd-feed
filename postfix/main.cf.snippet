@@ -1,0 +1,18 @@
+# Postfix milter settings for Rspamd
+#
+# Add these lines to /etc/postfix/main.cf, or apply them with:
+#
+#   sudo postconf -e 'milter_protocol = 6'
+#   sudo postconf -e 'milter_default_action = accept'
+#   sudo postconf -e 'smtpd_milters = inet:localhost:11332'
+#   sudo postconf -e 'non_smtpd_milters = inet:localhost:11332'
+#
+# milter_default_action = accept
+#   If Rspamd is unreachable, Postfix accepts the message rather than
+#   rejecting it. Change to "reject" for stricter behaviour (risks
+#   bouncing legitimate mail if Rspamd crashes).
+
+milter_protocol       = 6
+milter_default_action = accept
+smtpd_milters         = inet:localhost:11332
+non_smtpd_milters     = inet:localhost:11332
