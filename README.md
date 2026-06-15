@@ -1,8 +1,8 @@
-# rspamd-nrd-feed
+# wf-rspamd-postfix-nrd-feed
 
-> Block emails from newly registered domains in Rspamd + Postfix using the WhoisFreaks NRD feed. A rolling-window domain map, daily auto-refresh via cron, and hot-reload via inotify — no service restarts, no Docker required.
+> Block emails from newly registered domains in Rspamd + Postfix using the WhoisFreaks NRD feed. A rolling-window domain map, daily auto-refresh via cron, and hot-reload via inotify. No service restarts, no Docker required.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/WhoisFreaks/wf-rspamd-postfix-nrd-feed/blob/main/LICENSE)
 [![Rspamd](https://img.shields.io/badge/rspamd-3.x-FF6600.svg)](https://rspamd.com/)
 [![Ubuntu](https://img.shields.io/badge/ubuntu-22.04%2B-E95420.svg)](https://ubuntu.com/)
 
@@ -10,9 +10,9 @@
 
 ## Why
 
-Newly registered domains (NRDs) are disproportionately weaponized for spam, phishing, and business email compromise. Palo Alto Networks' Unit 42 found that **over 70% of domains registered in the previous 32 days were malicious, suspicious, or not safe for work** — the window before any curated threat feed picks them up.
+Newly registered domains (NRDs) are disproportionately weaponized for spam, phishing, and business email compromise. Palo Alto Networks' Unit 42 found that [more than 70% of domains registered in the previous 32 days were malicious, suspicious, or not safe for work](https://unit42.paloaltonetworks.com/newly-registered-domains-malicious-abuse-by-bad-actors/), the window before any curated threat feed picks them up.
 
-This repo wires the [WhoisFreaks NRD feed](https://whoisfreaks.com/products/newly-registered-domains.html) into Rspamd as a rolling-window sender-domain blocklist. Emails arriving from a domain registered within your chosen window receive a raised spam score — enough to flag them without outright rejecting legitimate new senders.
+This repo wires the [WhoisFreaks NRD feed](https://whoisfreaks.com/products/newly-registered-domains.html) into Rspamd as a rolling-window sender-domain blocklist. Emails arriving from a domain registered within your chosen window receive a raised spam score, enough to flag them without outright rejecting legitimate new senders.
 
 ## How it works
 
@@ -20,7 +20,7 @@ This repo wires the [WhoisFreaks NRD feed](https://whoisfreaks.com/products/newl
 WhoisFreaks NRD API
         │
         ▼
-  wf-nrd-fetch.sh          ← runs daily via cron at 02:15
+  wf-nrd-fetch.sh          ← runs daily via cron at 02:15 UTC
   (fetches gTLD + ccTLD,
    maintains rolling cache,
    atomic rename → map file)
@@ -36,17 +36,17 @@ Rspamd multimap rule        ← WF_NRD_SENDER symbol, +5.0 spam score
 Postfix milter              ← scoring decision applied at SMTP layer
 ```
 
-Rspamd monitors the map file via inotify. When the cron job atomically replaces it, Rspamd hot-reloads the new list in the background — no restart, no dropped mail.
+Rspamd monitors the map file via inotify. When the cron job atomically replaces it, Rspamd hot-reloads the new list in the background. No restart, no dropped mail.
 
 ## Features
 
-- **Rolling window** — keep 5, 10, or 30 days of NRDs. One env variable.
-- **Per-day caching** — only the newest two files download each night. No redundant API calls.
-- **Atomic map updates** — temp file + rename; Rspamd always reads a complete consistent snapshot.
-- **inotify hot-reload** — map changes are picked up automatically. No `rspamc reload` in cron.
-- **API key isolation** — key lives in `/etc/whoisfreaks/apikey` (chmod 600), never in scripts or config.
-- **Score mode by default** — raises spam score without hard-rejecting. Switch to reject only after monitoring false positives.
-- **Native Ubuntu install** — `apt install rspamd postfix`. No Docker, no containers.
+- **Rolling window:** keep 5, 10, or 30 days of NRDs. One env variable.
+- **Per-day caching:** only the newest day's files download each night. No redundant API calls.
+- **Atomic map updates:** temp file plus rename. Rspamd always reads a complete, consistent snapshot.
+- **inotify hot-reload:** map changes are picked up automatically. No `rspamc reload` in cron.
+- **API key isolation:** key lives in `/etc/whoisfreaks/apikey` (chmod 600), never in scripts or config.
+- **Score mode by default:** raises spam score without hard-rejecting. Switch to reject only after monitoring false positives.
+- **Native Ubuntu install:** `apt install rspamd postfix`. No Docker, no containers.
 
 ## Prerequisites
 
@@ -58,17 +58,18 @@ Rspamd monitors the map file via inotify. When the cron job atomically replaces 
 
 ### Automated (recommended)
 
-Clone the repo and run the installer — it handles everything:
+Clone the repo and run the installer. It handles everything:
 
 ```bash
-git clone https://github.com/WhoisFreaks/rspamd-nrd-feed.git
-cd rspamd-nrd-feed
+git clone https://github.com/WhoisFreaks/wf-rspamd-postfix-nrd-feed.git
+cd wf-rspamd-postfix-nrd-feed
 sudo ./install.sh
 ```
 
-The script will prompt for your WhoisFreaks API key, install Rspamd + Postfix, copy all config files, seed the map, and start all services. Done in under 5 minutes.
+The script prompts for your WhoisFreaks API key, installs Rspamd and Postfix, copies all config files, seeds the map, and starts all services. Done in under 5 minutes.
 
 Optional environment variables:
+
 ```bash
 sudo WINDOW_DAYS=30 MAIL_DOMAIN=mail.example.com ./install.sh
 ```
@@ -79,7 +80,7 @@ sudo WINDOW_DAYS=30 MAIL_DOMAIN=mail.example.com ./install.sh
 
 If you prefer to install each piece yourself:
 
-### 1. Install Rspamd and Postfix
+#### 1. Install Rspamd and Postfix
 
 ```bash
 # Add the official Rspamd repository (Ubuntu's built-in package is outdated)
@@ -103,7 +104,7 @@ sudo systemctl enable rspamd --now
 
 During the Postfix install prompt, choose **Internet Site** and enter your mail domain.
 
-### 2. Store your API key
+#### 2. Store your API key
 
 ```bash
 sudo mkdir -p /etc/whoisfreaks
@@ -111,35 +112,36 @@ echo "YOUR_API_KEY_HERE" | sudo tee /etc/whoisfreaks/apikey > /dev/null
 sudo chmod 600 /etc/whoisfreaks/apikey
 ```
 
-### 3. Install the fetch script
+#### 3. Install the fetch script
 
 ```bash
 sudo cp fetch/wf-nrd-fetch.sh /usr/local/bin/wf-nrd-fetch.sh
 sudo chmod +x /usr/local/bin/wf-nrd-fetch.sh
 ```
 
-### 4. Run the script once to seed the map
+#### 4. Run the script once to seed the map
 
 ```bash
 sudo WINDOW_DAYS=10 /usr/local/bin/wf-nrd-fetch.sh
 ```
 
-First run downloads all days in your window (~2–4 minutes). Subsequent daily runs download only the two newest files.
+First run downloads all days in your window (2 to 4 minutes). Subsequent daily runs download only the newest files.
 
 Expected output:
+
 ```
 [wf-nrd] Starting NRD fetch (window: 10 days)
 [wf-nrd] Fetching gtld for 2026-06-10...
-[wf-nrd] Fetched gtld: 182043 domains
+[wf-nrd] Fetched gtld: 309525 domains
 [wf-nrd] Fetching cctld for 2026-06-10...
-[wf-nrd] Fetched cctld: 94217 domains
-[wf-nrd] Map updated: 1847392 unique domains (10-day window)
+[wf-nrd] Fetched cctld: 64745 domains
+[wf-nrd] Map updated: 3014872 unique domains (10-day window)
 [wf-nrd] Done.
 ```
 
-> The script always fetches **yesterday's** date — WhoisFreaks publishes the previous day's registrations after consolidation. Fetching today's date returns empty or 404.
+> The script always fetches **yesterday's** date. WhoisFreaks publishes the previous day's registrations after consolidation. Fetching today's date returns empty or 404.
 
-### 5. Install the Rspamd multimap rule
+#### 5. Install the Rspamd multimap rule
 
 ```bash
 sudo cp rspamd/multimap.conf /etc/rspamd/local.d/multimap.conf
@@ -147,7 +149,7 @@ sudo cp rspamd/worker-proxy.inc /etc/rspamd/local.d/worker-proxy.inc
 sudo systemctl reload rspamd
 ```
 
-### 6. Connect Postfix to Rspamd
+#### 6. Connect Postfix to Rspamd
 
 ```bash
 sudo postconf -e 'milter_protocol = 6'
@@ -157,7 +159,7 @@ sudo postconf -e 'non_smtpd_milters = inet:localhost:11332'
 sudo systemctl reload postfix
 ```
 
-### 7. Install the cron job
+#### 7. Install the cron job
 
 Edit `cron/wf-nrd-rspamd` and set `WINDOW_DAYS` to your preference, then:
 
@@ -169,25 +171,27 @@ The job runs at 02:15 UTC every day and logs to `/var/log/wf-nrd.log`.
 
 ## Configuration
 
-| Variable | Default | Description |
-|---|---|---|
-| `WINDOW_DAYS` | `10` | Rolling window size in days |
-| `API_KEY_FILE` | `/etc/whoisfreaks/apikey` | Path to the API key file |
+| Variable       | Default                   | Description                 |
+| -------------- | ------------------------- | --------------------------- |
+| `WINDOW_DAYS`  | `10`                      | Rolling window size in days |
+| `API_KEY_FILE` | `/etc/whoisfreaks/apikey` | Path to the API key file    |
 
 **Choosing a window size:**
 
-| Window | Domains (approx.) | Use when |
-|---|---|---|
-| 5 days | ~900K | Fewest false positives; good starting point |
-| 10 days | ~1.8M | Balanced default |
-| 30 days | ~5.5M | Maximum coverage; monitor false positives |
+Map sizes are approximate and track daily registration volume, which varies day to day. The WhoisFreaks feed publishes a large volume of new gTLD and ccTLD domains each day, so window size drives map size directly.
+
+| Window  | Domains (approx.) | Use when                                    |
+| ------- | ----------------- | ------------------------------------------- |
+| 5 days  | ~1.5M             | Fewest false positives; good starting point |
+| 10 days | ~3M               | Balanced default                            |
+| 30 days | ~9M               | Maximum coverage; monitor false positives   |
 
 ## Verification
 
 Check that the symbol fires on a test message:
 
 ```bash
-wf-nrd-test.sh recently-registered.xyz
+echo "Test" | rspamc -F test@recently-registered.xyz
 ```
 
 Look for `WF_NRD_SENDER(5.00)` in the output. Then confirm Postfix is connected:
@@ -210,29 +214,29 @@ The Rspamd web UI is available at `http://localhost:11334`.
 The default `score = 5.0` raises the spam score without rejecting. Rspamd's default reject threshold is 15.0. Adjust in `rspamd/multimap.conf`:
 
 ```
-score = 3.0   # Softer — flag only when combined with other signals
-score = 5.0   # Default — adds spam header on its own
-score = 10.0  # Aggressive — near-reject when combined with one other signal
+score = 3.0   # Softer. Flag only when combined with other signals
+score = 5.0   # Default. Adds spam header on its own
+score = 10.0  # Aggressive. Near-reject when combined with one other signal
 ```
 
-To hard-reject at SMTP time, uncomment the `prefilter + action = "reject"` block in `multimap.conf` — but only after monitoring false positives for at least two weeks.
+To hard-reject at SMTP time, uncomment the `prefilter + action = "reject"` block in `multimap.conf`, but only after monitoring false positives for at least two weeks.
 
 ## Troubleshooting
 
-**`[wf-nrd] ERROR: API key file not found`** — Run step 2 (store the API key) and ensure the path matches `API_KEY_FILE`.
+**`[wf-nrd] ERROR: API key file not found`**. Run step 2 (store the API key) and ensure the path matches `API_KEY_FILE`.
 
-**`WF_NRD_SENDER` symbol not appearing** — Run `rspamadm configtest` to check for config errors. Confirm `/var/lib/rspamd/maps/nrd_domains.map` exists and is readable by `_rspamd`.
+**`WF_NRD_SENDER` symbol not appearing**. Run `rspamadm configtest` to check for config errors. Confirm `/var/lib/rspamd/maps/nrd_domains.map` exists and is readable by `_rspamd`.
 
-**Map not updating after cron** — Check `/var/log/wf-nrd.log` for errors. Verify the cache directory exists: `ls /var/cache/wf-nrd/`.
+**Map not updating after cron**. Check `/var/log/wf-nrd.log` for errors. Verify the cache directory exists: `ls /var/cache/wf-nrd/`.
 
-**Postfix not connecting to Rspamd** — Confirm Rspamd is listening: `ss -tlnp | grep 11332`. Check `milter_default_action` in `postconf -n`.
+**Postfix not connecting to Rspamd**. Confirm Rspamd is listening: `ss -tlnp | grep 11332`. Check `milter_default_action` in `postconf -n`.
 
-**High false positive rate** — Reduce `WINDOW_DAYS` to 5, or lower the score to 3.0 so the rule only tips the balance when combined with other signals.
+**High false positive rate**. Reduce `WINDOW_DAYS` to 5, or lower the score to 3.0 so the rule only tips the balance when combined with other signals.
 
 ## Repository structure
 
 ```
-rspamd-nrd-feed/
+wf-rspamd-postfix-nrd-feed/
 ├── install.sh                 # Single-command installer
 ├── fetch/
 │   └── wf-nrd-fetch.sh        # NRD feed fetch + map rebuild script
@@ -249,14 +253,12 @@ rspamd-nrd-feed/
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/WhoisFreaks/wf-rspamd-postfix-nrd-feed/blob/main/LICENSE)
 
 ## Related integrations
 
 This repository is part of a series integrating the WhoisFreaks NRD feed into common security tools:
 
-- [pihole-nrd-feed](https://github.com/WhoisFreaks/pihole-nrd-feed) — Pi-hole DNS blocklist
-- [adguard-nrd-feed](https://github.com/WhoisFreaks/adguard-nrd-feed) — AdGuard Home DNS blocklist
-- **rspamd-nrd-feed** — Rspamd + Postfix email filter ← you are here
-
-For the full write-up, see the [WhoisFreaks blog](https://whoisfreaks.com/blog).
+- [wf-pihole-nrd-feed](https://github.com/WhoisFreaks/wf-pihole-nrd-feed): Pi-hole DNS blocklist
+- [wf-adguard-nrd-feed](https://github.com/WhoisFreaks/wf-adguard-nrd-feed): AdGuard Home DNS blocklist
+- **wf-rspamd-postfix-nrd-feed** (this repo): Rspamd + Postfix email filter
